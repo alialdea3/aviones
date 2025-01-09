@@ -1,3 +1,5 @@
+import { serve } from "https://deno.land/std@0.204.0/http/server.ts";
+import { serveFile } from "https://deno.land/std@0.204.0/http/file_server.ts";
 import { MongoClient, ObjectId } from "mongodb";
 import type { AvionModel } from "./types.ts";
 import { fromModelToAvion } from "./utils.ts";
@@ -13,15 +15,25 @@ await client.connect();
 console.info("Connected to MongoDB");
 
 const db = client.db("flota");
-
 const avionCollection = db.collection<AvionModel>("aviones");
 
+// Manejo del router
 const handler = async (req: Request): Promise<Response> => {
     const method = req.method;
     const url = new URL(req.url);
     const path = url.pathname;
 
-    // Método GET: Obtener un avión específico o todos los aviones
+    // Sirve los archivos estáticos desde la carpeta "static"
+    if (path === "/" || path.startsWith("/static/")) {
+        const filePath = path === "/" ? "/static/index.html" : path;
+        try {
+            return await serveFile(req, `.${filePath}`);
+        } catch {
+            return new Response("Archivo no encontrado", { status: 404 });
+        }
+    }
+
+    // API REST para manejar los aviones
     if (method === "GET") {
         if (path.startsWith("/aviones/")) {
             const id = path.split("/")[2];
@@ -33,73 +45,64 @@ const handler = async (req: Request): Promise<Response> => {
             }
             const avion = fromModelToAvion(avionDB);
             return new Response(JSON.stringify(avion), { status: 200 });
-        } else if (path == "/aviones") {
+        } else if (path === "/aviones") {
             const avionDB = await avionCollection.find().toArray();
             const aviones = await Promise.all(
                 avionDB.map((u) => fromModelToAvion(u)),
             );
             return new Response(JSON.stringify(aviones), { status: 200 });
         }
-    } // Método POST: Crear un nuevo avión
-    else if (method === "POST") {
-        if (path === "/aviones") {
-            const avion = await req.json();
-            if (
-                !avion.nombre || !avion.velocidadDespegue ||
-                !avion.velocidadCrucero
-            ) {
-                return new Response("Bad request", { status: 400 });
-            }
-            const avionDB = await avionCollection.findOne({
-                nombre: avion.nombre,
-            });
-            if (avionDB) {
-                return new Response("Avión ya existe", { status: 409 });
-            }
+    } else if (method === "POST" && path === "/aviones") {
+        const avion = await req.json();
+        if (
+            !avion.nombre || !avion.velocidadDespegue ||
+            !avion.velocidadCrucero
+        ) {
+            return new Response("Bad request", { status: 400 });
+        }
+        const avionDB = await avionCollection.findOne({ nombre: avion.nombre });
+        if (avionDB) {
+            return new Response("Avión ya existe", { status: 409 });
+        }
 
-            const { insertedId } = await avionCollection.insertOne({
+        const { insertedId } = await avionCollection.insertOne({
+            nombre: avion.nombre,
+            velocidadDespegue: avion.velocidadDespegue,
+            velocidadCrucero: avion.velocidadCrucero,
+            velocidadAterrizaje: avion.velocidadAterrizaje || 0,
+            pesoInicial: avion.pesoInicial || 0,
+            areaAlar: avion.areaAlar || 0,
+            coefResistencia: avion.coefResistencia || 0,
+            tsfc: avion.tsfc || 0,
+            duracionDespegue: avion.duracionDespegue || 0,
+            duracionAterrizaje: avion.duracionAterrizaje || 0,
+        });
+
+        return new Response(
+            JSON.stringify({
                 nombre: avion.nombre,
                 velocidadDespegue: avion.velocidadDespegue,
                 velocidadCrucero: avion.velocidadCrucero,
-                velocidadAterrizaje: avion.velocidadAterrizaje || 0,
-                pesoInicial: avion.pesoInicial || 0,
-                areaAlar: avion.areaAlar || 0,
-                coefResistencia: avion.coefResistencia || 0,
-                tsfc: avion.tsfc || 0,
-                duracionDespegue: avion.duracionDespegue || 0,
-                duracionAterrizaje: avion.duracionAterrizaje || 0,
-            });
+                id: insertedId,
+            }),
+            { status: 201 },
+        );
+    } else if (method === "DELETE" && path.startsWith("/aviones/")) {
+        const id = path.split("/")[2];
+        if (!id) return new Response("Bad request", { status: 400 });
+        const { deletedCount } = await avionCollection.deleteOne({
+            _id: new ObjectId(id),
+        });
 
-            return new Response(
-                JSON.stringify({
-                    nombre: avion.nombre,
-                    velocidadDespegue: avion.velocidadDespegue,
-                    velocidadCrucero: avion.velocidadCrucero,
-                    id: insertedId,
-                }),
-                { status: 201 },
-            );
+        if (deletedCount === 0) {
+            return new Response("Avión no encontrado", { status: 404 });
         }
-    } // Método DELETE: Eliminar un avión
-    else if (method === "DELETE") {
-        if (path.startsWith("/aviones/")) {
-            const id = path.split("/")[2];
-            if (!id) return new Response("Bad request", { status: 400 });
-            const { deletedCount } = await avionCollection.deleteOne({
-                _id: new ObjectId(id),
-            });
 
-            if (deletedCount === 0) {
-                return new Response("Avión no encontrado", { status: 404 });
-            }
-
-            return new Response("Avión eliminado correctamente", {
-                status: 200,
-            });
-        }
+        return new Response("Avión eliminado correctamente", { status: 200 });
     }
 
     return new Response("Endpoint no encontrado", { status: 404 });
 };
 
-Deno.serve({ port: 3000 }, handler);
+// Servidor en el puerto 3000
+serve(handler);
