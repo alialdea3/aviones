@@ -17,13 +17,11 @@ console.info("Connected to MongoDB");
 const db = client.db("flota");
 const avionCollection = db.collection<AvionModel>("aviones");
 
-// Manejo del router
 const handler = async (req: Request): Promise<Response> => {
     const method = req.method;
     const url = new URL(req.url);
     const path = url.pathname;
 
-    // Sirve los archivos estáticos desde la carpeta "static"
     if (path === "/" || path.startsWith("/static/")) {
         const filePath = path === "/" ? "/static/index.html" : path;
         try {
@@ -33,7 +31,6 @@ const handler = async (req: Request): Promise<Response> => {
         }
     }
 
-    // API REST para manejar los aviones
     if (method === "GET") {
         if (path.startsWith("/aviones/")) {
             const id = path.split("/")[2];
@@ -104,5 +101,4 @@ const handler = async (req: Request): Promise<Response> => {
     return new Response("Endpoint no encontrado", { status: 404 });
 };
 
-// Servidor en el puerto 3000
 serve(handler);

@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const aviones = await response.json();
-        selectElement.innerHTML = ""; // Limpia el contenido inicial
+        selectElement.innerHTML = "";
         aviones.forEach((avion) => {
             const option = document.createElement("option");
             option.value = avion.id;
