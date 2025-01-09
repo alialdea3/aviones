@@ -1,24 +1,22 @@
-// Esperamos a que el DOM se haya cargado
-document.addEventListener("DOMContentLoaded", () => {
-    const avionSelect = document.getElementById("avionSelect");
+document.addEventListener("DOMContentLoaded", async () => {
+    const selectElement = document.getElementById("aviones");
 
-    // Función para cargar los aviones desde la API
-    const cargarAviones = async () => {
-        try {
-            const respuesta = await fetch("http://localhost:3000/aviones");
-            const aviones = await respuesta.json();
-
-            aviones.forEach(avion => {
-                const option = document.createElement("option");
-                option.value = avion.id;  // Usamos el ID del avión como valor
-                option.textContent = avion.nombre;  // Mostramos el nombre del avión
-                avionSelect.appendChild(option);
-            });
-        } catch (error) {
-            console.error("Error al cargar los aviones:", error);
+    try {
+        const response = await fetch("/aviones");
+        if (!response.ok) {
+            throw new Error("Error al obtener los aviones");
         }
-    };
 
-    // Cargar los aviones cuando se cargue la página
-    cargarAviones();
+        const aviones = await response.json();
+        selectElement.innerHTML = ""; // Limpia el contenido inicial
+        aviones.forEach((avion) => {
+            const option = document.createElement("option");
+            option.value = avion.id;
+            option.textContent = avion.nombre;
+            selectElement.appendChild(option);
+        });
+    } catch (error) {
+        console.error("Error:", error);
+        selectElement.innerHTML = `<option value="" disabled>Error al cargar aviones</option>`;
+    }
 });
