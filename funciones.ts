@@ -10,9 +10,9 @@ type DensidadAire = {
     crucero: number;
 };
 
-const DENSIDAD_DESPEJADA: DensidadAire = { despegue: 1.225, crucero: 0.4 };
+const DENSIDAD_ADVERSA: DensidadAire = { despegue: 1.225, crucero: 0.4 };
 const DENSIDAD_MEDIA: DensidadAire = { despegue: 1.2, crucero: 0.5 };
-const DENSIDAD_ADVERSA: DensidadAire = { despegue: 1.15, crucero: 0.6 };
+const DENSIDAD_DESPEJADA: DensidadAire = { despegue: 1.15, crucero: 0.6 };
 
 const obtenerDensidad = (condicion: CondicionesVuelo): DensidadAire => {
     if (condicion === "despejado") return DENSIDAD_DESPEJADA;
@@ -20,23 +20,47 @@ const obtenerDensidad = (condicion: CondicionesVuelo): DensidadAire => {
     return DENSIDAD_MEDIA;
 };
 
-type ConsumoParams = { id: string; fase: "despegue" | "crucero" | "aterrizaje"; condicion: CondicionesVuelo };
-export function calcularConsumo(tsfc: number, duracionDespegue: number, duracionAterrizaje: number, tiempoTotal: number, condicionVuelo: string): number[] {
-    const puntos = 12;
-    const intervalo = tiempoTotal / puntos;
+//type ConsumoParams = { id: string; fase: "despegue" | "crucero" | "aterrizaje"; condicion: CondicionesVuelo };
+export function calcularConsumo(
+    tsfc: number,
+    duracionDespegue: number,
+    duracionAterrizaje: number,
+    tiempoTotal: number,
+    condicionVuelo: string,
+    velocidadDespegue:number,
+    velocidadCrucero:number,
+    velocidadAterrizaje:number,
+    areaAlar:number,
+    coefResistencia:number,
+    pesoInicial:number
+        
+): number[] {
     const consumos: number[] = [];
     const densidadAire = obtenerDensidad(condicionVuelo as CondicionesVuelo);
 
-    for (let i = 0; i <= puntos; i++) {
-        const tiempo = i * intervalo;
+    const momentos = [
+        1, 
+        duracionDespegue-1, 
+        duracionDespegue + (3600 - duracionAterrizaje - duracionDespegue) / 5,
+        duracionDespegue + (3600 - duracionAterrizaje - duracionDespegue) * 2 / 5,
+        duracionDespegue + (3600 - duracionAterrizaje - duracionDespegue) * 3 / 5,
+        duracionDespegue + (3600 - duracionAterrizaje - duracionDespegue) * 4 / 5,
+        3600 - duracionAterrizaje+1,
+        3600 
+    ];
+
+    for (let tiempo of momentos) {
         let consumo: number;
 
         if (tiempo < duracionDespegue) {
-            consumo = tiempo * tsfc * 1.2 * densidadAire.despegue;
+            // fase de despegue
+            consumo = (0.5*velocidadDespegue*velocidadDespegue*densidadAire.despegue*areaAlar*coefResistencia*tsfc)/1000
         } else if (tiempo > tiempoTotal - duracionAterrizaje) {
-            consumo = tsfc * 0.8 * densidadAire.crucero;
+            // fase de aterrizaje
+            consumo = (0.5*velocidadDespegue*velocidadCrucero*densidadAire.crucero*areaAlar*coefResistencia*tsfc)/1000
         } else {
-            consumo = tsfc * densidadAire.crucero;
+            // fase de crucero
+            consumo =(0.5*velocidadDespegue*velocidadAterrizaje*densidadAire.despegue*areaAlar*coefResistencia*tsfc)/1000
         }
 
         consumos.push(consumo);

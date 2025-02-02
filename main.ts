@@ -109,9 +109,9 @@ const handler = async (req: Request): Promise<Response> => {
         return new Response("Avión eliminado correctamente", { status: 200 });
     }
     if (method === "POST" && path === "/calcular-consumo") {
-        const { tsfc, duracionDespegue, duracionAterrizaje, tiempoTotal, condicionVuelo } = await req.json();
+        const { tsfc, duracionDespegue, duracionAterrizaje, tiempoTotal, condicionVuelo,velocidadDespegue,velocidadCrucero, velocidadAterrizaje,areaAlar,coefResistencia, pesoInicial } = await req.json();
         
-        const consumos = calcularConsumo(tsfc, duracionDespegue, duracionAterrizaje, tiempoTotal, condicionVuelo);
+        const consumos = calcularConsumo(tsfc, duracionDespegue, duracionAterrizaje, tiempoTotal, condicionVuelo, velocidadDespegue,velocidadCrucero, velocidadAterrizaje,areaAlar,coefResistencia, pesoInicial);
         
         return new Response(JSON.stringify(consumos), { status: 200 });
     }

@@ -46,6 +46,13 @@ document.getElementById("calcular").addEventListener("click", () => {
                     duracionAterrizaje: avion.duracionAterrizaje,
                     tiempoTotal: 3600,
                     condicionVuelo: condicionVuelo,
+                    velocidadDespegue: avion.velocidadDespegue,
+                    velocidadCrucero: avion.velocidadCrucero,
+                    velocidadAterrizaje: avion.velocidadAterrizaje,
+                    areaAlar: avion.areaAlar,
+                    coefResistencia: avion.coefResistencia,
+                    pesoInicial: avion.pesoInicial
+
                 }),
             })
                 .then((response) => response.json())
@@ -90,77 +97,47 @@ function generarTabla(consumos, avion) {
     const tiempoDespegue = avion.duracionDespegue;
     const tiempoAterrizaje = avion.duracionAterrizaje;
     const tiempoTotal = 3600;
-    const tiempoCruceroInicio = tiempoDespegue;
-    const tiempoCruceroFin = tiempoTotal - tiempoAterrizaje;
 
-    let consumosDespegue = [];
-    let consumosCrucero = [];
-    let consumosAterrizaje = [];
+    const momentos = [
+        1, // pto 1: inicio del vuelo
+        tiempoDespegue - 1, // pto 2: fin del despegue
+        // ptos 3-6: ptos intermedios entre el fin del despegue y el inicio del aterrizaje
+        tiempoDespegue + (3600 - tiempoAterrizaje - tiempoDespegue) / 5,
+        tiempoDespegue + (3600 - tiempoAterrizaje - tiempoDespegue) * 2 / 5,
+        tiempoDespegue + (3600 - tiempoAterrizaje - tiempoDespegue) * 3 / 5,
+        tiempoDespegue + (3600 - tiempoAterrizaje - tiempoDespegue) * 4 / 5,
+        3600 - tiempoAterrizaje + 1, // pto 7: inicio del aterrizaje
+        3600 // pto 8: fin del vuelo
+    ];
 
-    for (let i = 0; i < consumos.length; i++) {
-        const tiempoActual = (i / (consumos.length - 1)) * tiempoTotal;
-
-        if (tiempoActual < tiempoDespegue) {
-            consumosDespegue.push(consumos[i]);
-        } else if (tiempoActual > tiempoCruceroFin) {
-            consumosAterrizaje.push(consumos[i]);
-        } else {
-            consumosCrucero.push(consumos[i]);
-        }
-    }
-
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 8; i++) {
         const fila = document.createElement("tr");
 
         const celdaConsumo = document.createElement("td");
-        let consumo;
-        if (i < consumosDespegue.length) {
-            consumo = consumosDespegue[i];
-        } else if (i < consumosDespegue.length + consumosCrucero.length) {
-            consumo = consumosCrucero[i - consumosDespegue.length];
-        } else {
-            consumo = consumosAterrizaje[i - consumosDespegue.length - consumosCrucero.length];
-        }
-        celdaConsumo.textContent = consumo.toFixed(2);
+        celdaConsumo.textContent = consumos[i].toFixed(2);
         fila.appendChild(celdaConsumo);
 
         const celdaFase = document.createElement("td");
         let fase;
-        if (i < consumosDespegue.length) {
+        if (momentos[i] < tiempoDespegue) {
             fase = "Despegue";
-        } else if (i < consumosDespegue.length + consumosCrucero.length) {
-            fase = "Crucero";
-        } else {
+        } else if (momentos[i] > tiempoTotal - tiempoAterrizaje) {
             fase = "Aterrizaje";
+        } else {
+            fase = "Crucero";
         }
         celdaFase.textContent = fase;
         fila.appendChild(celdaFase);
 
         const celdaMomento = document.createElement("td");
-        let tiempoIntervalo;
-
-        if (i === 0) {
-            tiempoIntervalo = 0;
-        }
-        else if (i === 1) {
-            tiempoIntervalo = tiempoDespegue - 1;
-        }
-        else if (i === 5) {
-            tiempoIntervalo = 3601 - tiempoAterrizaje;
-        }
-        else if (i === 6) {
-            tiempoIntervalo = 3600;
-        }
-        else {
-            tiempoIntervalo = (i / 6) * tiempoTotal;
-        }
-
-        celdaMomento.textContent = Math.round(tiempoIntervalo);
+        celdaMomento.textContent = Math.round(momentos[i]);
         fila.appendChild(celdaMomento);
 
         tabla.appendChild(fila);
     }
+
     tablaContainer.appendChild(tabla);
 }
+
 
 

@@ -2,6 +2,11 @@ body {
     font-family: Arial, sans-serif;
     text-align: center;
     margin: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
 }
 
 h1 {
@@ -10,7 +15,7 @@ h1 {
 
 button {
     background-color: #ff5733;
-    color: white;
+    color: rgb(235, 200, 227);
     border: none;
     padding: 10px 15px;
     font-size: 16px;
@@ -26,4 +31,36 @@ button:hover {
 canvas {
     margin-top: 20px;
     max-width: 80%;
+}
+
+
+#tabla-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-top: 20px;
+}
+
+table {
+    border-collapse: collapse;
+    width: auto;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+}
+
+td {
+    border: 1px solid #e6c1df;
+}
+
+td {
+    padding: 8px;
+    text-align: center;
+}
+
+
+
+tr:nth-child(even) {
+    background-color: #e6c1df;
 }
