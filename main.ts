@@ -3,6 +3,17 @@ import { serveFile } from "https://deno.land/std@0.204.0/http/file_server.ts";
 import { MongoClient, ObjectId } from "mongodb";
 import type { AvionModel } from "./types.ts";
 import { fromModelToAvion } from "./utils.ts";
+import { calcularConsumo } from "./funciones.ts";
+
+const DENSIDAD_DESPEJADA = { despegue: 1.225, crucero: 0.4 };
+const DENSIDAD_MEDIA = { despegue: 1.2, crucero: 0.5 };
+const DENSIDAD_ADVERSA = { despegue: 1.15, crucero: 0.6 };
+
+const obtenerDensidad = (condicion: "despejado" | "estandar" | "adverso") => {
+    if (condicion === "despejado") return DENSIDAD_DESPEJADA;
+    if (condicion === "adverso") return DENSIDAD_ADVERSA;
+    return DENSIDAD_MEDIA;
+};
 
 const MONGO_URL = Deno.env.get("MONGO_URL");
 if (!MONGO_URL) {
@@ -15,7 +26,7 @@ await client.connect();
 console.info("Connected to MongoDB");
 
 const db = client.db("flota");
-const avionCollection = db.collection<AvionModel>("aviones");
+export const avionCollection = db.collection<AvionModel>("aviones");
 
 const handler = async (req: Request): Promise<Response> => {
     const method = req.method;
@@ -96,6 +107,13 @@ const handler = async (req: Request): Promise<Response> => {
         }
 
         return new Response("Avión eliminado correctamente", { status: 200 });
+    }
+    if (method === "POST" && path === "/calcular-consumo") {
+        const { tsfc, duracionDespegue, duracionAterrizaje, tiempoTotal, condicionVuelo } = await req.json();
+        
+        const consumos = calcularConsumo(tsfc, duracionDespegue, duracionAterrizaje, tiempoTotal, condicionVuelo);
+        
+        return new Response(JSON.stringify(consumos), { status: 200 });
     }
 
     return new Response("Endpoint no encontrado", { status: 404 });

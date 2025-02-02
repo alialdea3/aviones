@@ -1,19 +1,39 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aviones</title>
     <link rel="stylesheet" href="/static/styles.css">
 </head>
+
 <body>
     <h1>Aviones Disponibles ✈️</h1>
+
     <div>
         <label for="aviones">Selecciona un avión:</label>
         <select id="aviones">
             <option value="" disabled selected>Loading...</option>
         </select>
     </div>
+
+    <div>
+        <label for="condiciones">Selecciona las condiciones de vuelo:</label>
+        <select id="condiciones">
+            <option value="despejado">Despejado</option>
+            <option value="estandar" selected>Estándar</option>
+            <option value="adverso">Adverso</option>
+        </select>
+    </div>
+
+    <div>
+        <button id="calcular">Calcular Consumo</button>
+    </div>
+
+    <div id="tabla-container"></div>
+
     <script src="/static/script.js"></script>
 </body>
+
 </html>
